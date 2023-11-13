@@ -29,7 +29,7 @@ const client = new Client({ node: "http://localhost:9200" });
 /* เดี๋ยวเราจะเพิ่ม code ตรงนี้กัน */
 app.get("/init", async (req, res) => {
   // จำนวนที่จะ gen
-  for (let i = 0; i < 900000; i++) {
+  for (let i = 0; i < 100000; i++) {
     let book = {
       title: faker.commerce.productName(),
       author: faker.person.fullName(),

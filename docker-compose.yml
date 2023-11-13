@@ -3,17 +3,23 @@ version: "3.8"
 networks:
   esnet:
 
-# volumes:
-#   es01-data:
-  # es02-data:
-
 services:
+  sysctl:
+    image: alpine
+    container_name: sysctl
+    command: sh -c "sysctl -w vm.max_map_count=262144 && sleep 10"
+    privileged: true
+    network_mode: host
+    restart: on-failure
+
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     container_name: es01
     environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - node.name=es01
+      - discovery.seed_hosts=es02
+      - cluster.initial_master_nodes=es01,es02
+    mem_limit: 1g
     ulimits:
       memlock:
         soft: -1
@@ -24,15 +30,24 @@ services:
       - ./data/es01/data/:/usr/share/elasticsearch/data
     networks:
       - esnet
-
-  # Elasticsearch mornitor
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.15.0
-    environment:
-      - ELASTICSEARCH_HOSTS=http://es01:9200
-    ports:
-      - "5601:5601"
     depends_on:
-      - es01
+      - sysctl
+
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: es02
+    environment:
+      - node.name=es02
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02
+    mem_limit: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/es02/data/:/usr/share/elasticsearch/data
     networks:
       - esnet
+    depends_on:
+      - sysctl
