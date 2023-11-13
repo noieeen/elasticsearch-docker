@@ -17,9 +17,11 @@ services:
     container_name: es01
     environment:
       - node.name=es01
-      - discovery.seed_hosts=es02
-      - cluster.initial_master_nodes=es01,es02
-    mem_limit: 1g
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    mem_limit: 2g
     ulimits:
       memlock:
         soft: -1
@@ -38,15 +40,38 @@ services:
     container_name: es02
     environment:
       - node.name=es02
-      - discovery.seed_hosts=es01
-      - cluster.initial_master_nodes=es01,es02
-    mem_limit: 1g
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    mem_limit: 2g
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
       - ./data/es02/data/:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+    depends_on:
+      - sysctl
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: es03
+    environment:
+      - node.name=es03
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    mem_limit: 2g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/es03/data/:/usr/share/elasticsearch/data
     networks:
       - esnet
     depends_on:
