@@ -1,61 +1,84 @@
-version: "3"
-services:
-  es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: es01
-    environment:
-      - node.name=es01
-      - claster.name=es-docker-cluster
-      - discovery.seed-hosts=es02
-      - cluster.initial_master_nodes=es01,es02
-      - bootstarp.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - ./data/es01:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-    networks:
-      - esnet
-
-  es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: es02
-    environment:
-      - node.name=es02
-      - claster.name=es-docker-cluster
-      - discovery.seed-hosts=es01
-      - cluster.initial_master_nodes=es01,es02
-      - bootstarp.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - ./data/es02:/usr/share/elasticsearch/data
-    networks:
-      - esnet
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOST=http://es01:9200
-    ports:
-      - 5601:5601
-    depends_on:
-      - es01
-    networks:
-      - esnet
+version: "3.8"
 
 networks:
   esnet:
 
-
 volumes:
+  es01-data:
+  es02-data:
+
+services:
   es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es01
+    environment:
+      # - discovery.type=single-node
+      # - ELASTICSEARCH_USERNAME=your_username
+      # - ELASTICSEARCH_PASSWORD=your_password
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es01-data:/usr/share/elasticsearch/data
+    # mem_limit: ${MEM_LIMIT}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - esnet
+
   es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es02
+    environment:
+      # - discovery.type=single-node
+      # - ELASTICSEARCH_USERNAME=your_username
+      # - ELASTICSEARCH_PASSWORD=your_password
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - es02-data:/usr/share/elasticsearch/data
+    # mem_limit: ${MEM_LIMIT}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - esnet
+
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+  #   environment:
+  #     # - ELASTICSEARCH_HOSTS=http://es01:9200
+  #     # ELASTICSEARCH_URL: http://es01:9200
+  #     ELASTICSEARCH_URL: http://your_username:your_password@es01:9200
+  #     # - SERVERNAME=kibana
+  #     # - ELASTICSEARCH_HOSTS=https://es01:9200
+  #     # - ELASTICSEARCH_USERNAME=kibana_system
+  #     # - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+  #   ports:
+  #     - "5601:5601"
+  #   depends_on:
+  #     - es01
+  #   networks:
+  #     - esnet
